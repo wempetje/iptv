@@ -14,12 +14,18 @@ const ICONS = {
   play: '<polygon points="6 3 20 12 6 21 6 3"/>',
   battery: '<rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/>',
   pylon: '<path d="M8 22 12 2l4 20M6 8h12M5 14h14M9 14l6-6M15 14 9 8"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  news: '<path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/>',
   layout: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
 };
 const icon = (name) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] ?? ICONS.grid}</svg>`;
 
 const state = { config: null, status: {}, busyUntil: 0, pending: new Set(), rendered: new Map(), connected: true };
 const $ = (sel, root = document) => root.querySelector(sel);
+
+/** Alleen http(s)-links doorlaten (geen javascript: e.d. uit externe feeds). */
+const safeUrl = (u) => (/^https?:\/\//i.test(String(u ?? '')) ? String(u) : null);
+const safeColor = (c) => (/^#[0-9a-f]{3,8}$/i.test(String(c ?? '')) ? c : null);
 
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -98,11 +104,18 @@ function renderItem(tile, item) {
   const showSliders = sliders.length && (!toggle || toggle.value);
   const metrics = (item.metrics ?? []).map((m) => `<span>${esc(m.label)} <b>${valueWithUnit(m)}</b></span>`).join('');
 
-  return `<div class="item${item.online === false ? ' offline' : ''}${toggle?.value ? ' is-on' : ''}">
+  const href = safeUrl(item.href);
+  const img = safeUrl(item.image);
+  const color = safeColor(item.color);
+  const name = href ? `<a class="item-link" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(item.name)}</a>` : esc(item.name);
+
+  return `<div class="item${item.online === false ? ' offline' : ''}${toggle?.value ? ' is-on' : ''}${href ? ' has-link' : ''}">
     <div class="item-row">
-      <span class="item-icon">${icon(item.icon ?? tile.icon)}</span>
+      ${img ? `<img class="item-img" src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+            : `<span class="item-icon"${color ? ` style="color:${color}"` : ''}>${icon(item.icon ?? tile.icon)}</span>`}
       <div class="item-main">
-        <div class="item-name">${esc(item.name)}</div>
+        <div class="item-name${item.subtitle ? ' wrap' : ''}">${name}</div>
+        ${item.subtitle ? `<div class="item-sub">${esc(item.subtitle)}</div>` : ''}
         ${metrics ? `<div class="item-metrics">${metrics}</div>` : ''}
       </div>
       ${stepper ? renderControl(tile, item, stepper) : ''}
@@ -149,14 +162,22 @@ function renderCard(tile) {
     if (d.summary) {
       body += `<div class="summary"><span class="summary-label">${esc(d.summary.label ?? '')}</span>
         ${d.summary.unit === '€' ? '<span class="summary-unit">€</span>' : ''}
-        <span class="summary-value${d.summary.trend ? ` ${d.summary.trend}` : ''}">${fmt(d.summary.value, d.summary.decimals)}</span>
+        <span class="summary-value${d.summary.trend ? ` ${d.summary.trend}` : ''}${typeof d.summary.value === 'string' ? ' text' : ''}">${fmt(d.summary.value, d.summary.decimals)}</span>
         ${d.summary.unit && d.summary.unit !== '€' ? `<span class="summary-unit">${esc(d.summary.unit)}</span>` : ''}</div>`;
     }
     if (d.flow) body += renderFlow(d.flow);
     if (d.metrics?.length) {
       body += `<div class="metrics">${d.metrics.map((m) => `<div class="metric"><div class="metric-label">${m.icon ? icon(m.icon) : ''}${esc(m.label)}</div><div class="metric-value">${valueWithUnit(m)}</div></div>`).join('')}</div>`;
     }
-    if (d.items?.length) body += `<div class="items">${d.items.map((it) => renderItem(tile, it)).join('')}</div>`;
+    if (d.items?.length) {
+      let group;
+      const rows = d.items.map((it) => {
+        const header = it.group && it.group !== group ? `<div class="item-group">${esc(it.group)}</div>` : '';
+        group = it.group ?? group;
+        return header + renderItem(tile, it);
+      });
+      body += `<div class="items">${rows.join('')}</div>`;
+    }
     if (d.note && !tile.demo) body += `<div class="note">${esc(d.note)}</div>`;
   }
   return head + body;

@@ -39,6 +39,8 @@ export function loadConfig() {
   if (file !== wanted) console.warn(`[config] ${wanted} niet gevonden, demo-configuratie ${file} wordt gebruikt`);
 
   const cfg = substituteEnv(JSON.parse(readFileSync(file, 'utf8')));
+  // Tijdzone bepaalt "vandaag" in de agenda en tijden in het nieuws.
+  process.env.TZ = process.env.TZ || cfg.timezone || 'Europe/Amsterdam';
   return {
     title: cfg.title ?? 'Thuis',
     refreshSeconds: cfg.refreshSeconds ?? 5,

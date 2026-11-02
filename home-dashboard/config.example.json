@@ -1,7 +1,7 @@
 {
   "title": "Thuis",
   "refreshSeconds": 5,
-
+  "timezone": "Europe/Amsterdam",
   "integrations": [
     {
       "id": "zon",
@@ -38,10 +38,45 @@
       "url": "http://192.168.1.60:3000/api/dashboard",
       "controlUrl": "http://192.168.1.60:3000/api/dashboard/control",
       "openUrl": "http://192.168.1.60:3000"
+    },
+    {
+      "id": "agenda",
+      "type": "calendar",
+      "name": "Agenda",
+      "demo": true,
+      "days": 7,
+      "calendars": [
+        {
+          "name": "Privé",
+          "url": "${AGENDA_PRIVE_ICS}",
+          "color": "#4f8cff"
+        },
+        {
+          "name": "Werk",
+          "url": "${AGENDA_WERK_ICS}",
+          "color": "#3ecf8e"
+        }
+      ],
+      "openUrl": "https://calendar.google.com"
+    },
+    {
+      "id": "nieuws",
+      "type": "nunl",
+      "name": "NU.nl",
+      "demo": true,
+      "categories": [
+        "Algemeen",
+        "Tech"
+      ],
+      "maxItems": 8,
+      "openUrl": "https://www.nu.nl"
     }
   ],
-
   "apps": [
-    { "name": "Crypto-app", "url": "http://192.168.1.60:3000", "icon": "coins" }
+    {
+      "name": "Crypto-app",
+      "url": "http://192.168.1.60:3000",
+      "icon": "coins"
+    }
   ]
 }

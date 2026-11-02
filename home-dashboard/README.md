@@ -1,7 +1,8 @@
 # Thuisdashboard
 
 Eén status- en bedieningsscherm voor je hele huis: **Plugwise**, **LSC Smart Connect-lampen**,
-**SolarEdge-zonnepanelen** en je **eigen apps** (zoals je crypto-applicatie). Draait op elke
+**SolarEdge-zonnepanelen**, je **agenda** (DigiCal / Google Agenda), **nieuws van NU.nl** en je
+**eigen apps** (zoals je crypto-applicatie). Draait op elke
 machine met Node.js of Docker (Raspberry Pi, NAS, thuisserver) en werkt in de browser op pc,
 telefoon of een tablet aan de muur. Je kunt het op je beginscherm zetten als app (PWA).
 
@@ -11,6 +12,8 @@ telefoon of een tablet aan de muur. Je kunt het op je beginscherm zetten als app
 Browser / tablet  ──►  Thuisdashboard (Node)  ──►  Plugwise Smile/Adam   (lokaal, XML-API)
                                                 ├─►  Tuya Cloud           (LSC-lampen/stekkers)
                                                 ├─►  SolarEdge API        (zonnepanelen)
+                                                ├─►  Agenda's (iCal)      (Google/DigiCal, iCloud, Outlook)
+                                                ├─►  NU.nl (RSS)          (nieuws)
                                                 └─►  Jouw app (JSON)      (bv. crypto)
 ```
 
@@ -53,8 +56,8 @@ Opties die voor elke tegel gelden:
 
 | Veld | Betekenis |
 | --- | --- |
-| `id`, `name`, `icon` | Naam en icoon (`sun`, `bulb`, `plug`, `flame`, `thermometer`, `coins`, `zap`, `home`, `grid`) |
-| `type` | `plugwise`, `lsc` (= `tuya`), `solaredge`, `http-json` |
+| `id`, `name`, `icon` | Naam en icoon (`sun`, `bulb`, `plug`, `flame`, `thermometer`, `coins`, `zap`, `home`, `calendar`, `news`, `grid`) |
+| `type` | `plugwise`, `lsc` (= `tuya`), `solaredge`, `calendar`, `nunl`, `rss`, `http-json` |
 | `demo` | `true` = nepdata, handig om te testen |
 | `pollSeconds` | Hoe vaak de server ophaalt (standaard per type) |
 | `openUrl` | Knop om de originele app/website te openen |
@@ -101,6 +104,48 @@ API-sleutel en site-ID vind je in het SolarEdge monitoringportaal onder
 (de API staat 300 verzoeken per dag toe). Met een SolarEdge-meter zie je ook de
 energiestroom zon → huis → net. Zet `"powerFlow": false` als je geen meter hebt.
 
+### Agenda (DigiCal)
+
+DigiCal is een agenda-app op je telefoon; de afspraken zelf staan in de agenda's die eraan
+gekoppeld zijn (meestal **Google Agenda**, soms Outlook of iCloud). Het dashboard leest die
+agenda's rechtstreeks via hun **geheime iCal-adres** — wat je in DigiCal ziet, zie je hier ook.
+
+Google Agenda: ga op een computer naar [calendar.google.com](https://calendar.google.com) →
+⚙ *Instellingen* → kies links je agenda → *Agenda integreren* → kopieer
+**Geheim adres in iCal-indeling** en zet het in `.env`. Herhaal per agenda (privé, werk, gezin…).
+
+- iCloud: agenda delen als *openbare agenda* en de `webcal://`-link gebruiken.
+- Outlook/Office 365: *Instellingen → Agenda → Gedeelde agenda's → Agenda publiceren* (ICS-link).
+
+```json
+{ "type": "calendar", "name": "Agenda", "days": 7, "maxItems": 15,
+  "calendars": [
+    { "name": "Privé", "url": "${AGENDA_PRIVE_ICS}", "color": "#4f8cff" },
+    { "name": "Werk",  "url": "${AGENDA_WERK_ICS}",  "color": "#3ecf8e" }
+  ] }
+```
+
+Toont de volgende afspraak groot, en daaronder de komende dagen gegroepeerd per dag
+(herhalende afspraken, hele-dag-afspraken en tijdzones worden correct verwerkt).
+Behandel het geheime adres als een wachtwoord: iedereen met de link kan je agenda lezen.
+De tijdzone stel je in met `"timezone"` bovenin de config (standaard `Europe/Amsterdam`).
+
+### Nieuws (NU.nl en andere RSS-feeds)
+
+```json
+{ "type": "nunl", "name": "NU.nl", "categories": ["Algemeen", "Tech"], "maxItems": 8 }
+```
+
+Rubrieken zijn o.a. `Algemeen`, `Binnenland`, `Buitenland`, `Economie`, `Sport`, `Tech`,
+`Entertainment`, `Wetenschap` en `Gezondheid` (ze worden `https://www.nu.nl/rss/<rubriek>`).
+Klik op een kop om het artikel te openen. `"images": false` verbergt de thumbnails.
+
+Elke andere nieuwssite met RSS of Atom werkt ook:
+
+```json
+{ "type": "rss", "name": "Tweakers", "feeds": [{ "url": "https://feeds.feedburner.com/tweakers/mixed", "name": "Tweakers" }] }
+```
+
 ### Eigen app (bijv. je crypto-applicatie)
 
 Type `http-json`. Er zijn twee manieren:
@@ -133,6 +178,9 @@ Voeg in je app een endpoint toe, bijvoorbeeld `GET /api/dashboard`:
 
 Bedient iemand een knop, dan krijgt `controlUrl` een `POST` met
 `{ "deviceId": "bot", "key": "on", "value": false }`.
+
+Per item kun je ook `subtitle`, `href` (klikbare link), `image`, `color` en `group`
+(kopje boven een groep items) meegeven.
 
 Beschikbare controls: `toggle` (aan/uit), `range` (`min`, `max`, `step`, `unit`, optioneel
 `stepper: true` voor −/+ knoppen), `color` (`#rrggbb`) en `button` (`label`).

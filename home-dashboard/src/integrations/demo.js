@@ -1,5 +1,7 @@
 import { Integration } from './base.js';
 import { energy, power, round } from '../util.js';
+import { eventsToData } from './calendar.js';
+import { articlesToData } from './rss.js';
 
 /**
  * Nepdata per integratietype, zodat het dashboard direct werkt zonder echte apparaten.
@@ -153,6 +155,42 @@ const SCENARIOS = {
       if (deviceId === 'bot' && key === 'on') return void (s.bot = Boolean(value));
       throw new Error('Onbekende bediening');
     },
+  },
+
+  calendar: {
+    state: () => {
+      const d = (dayOffset, h, m = 0) => { const x = new Date(); x.setDate(x.getDate() + dayOffset); x.setHours(h, m, 0, 0); return x; };
+      const ev = (title, start, durMin, opts = {}) => ({ uid: title, title, start, end: new Date(start.getTime() + durMin * 60000), allDay: false, location: '', calendar: 'Privé', color: '#4f8cff', ...opts });
+      const allDay = (title, dayOffset, days = 1, opts = {}) => ({ uid: title, title, start: d(dayOffset, 0), end: d(dayOffset + days, 0), allDay: true, location: '', calendar: 'Familie', color: '#e07a5f', ...opts });
+      const now = new Date();
+      return [
+        ev('Stand-up', new Date(now.getTime() - 15 * 60000), 45, { calendar: 'Werk', color: '#3ecf8e', location: 'Teams' }),
+        ev('Tandarts', d(0, Math.max(now.getHours() + 2, 15), 30), 30, { location: 'Tandartspraktijk Centrum' }),
+        ev('Voetbal training', d(0, 19, 30), 90, { location: 'Sportpark' }),
+        allDay('Oud papier aan de straat', 1),
+        ev('Overleg energiecoöperatie', d(1, 20), 60, { calendar: 'Werk', color: '#3ecf8e' }),
+        allDay('Verjaardag oma', 2, 1, { color: '#f5b942' }),
+        ev('Boodschappen', d(3, 10), 60),
+        allDay('Weekendje weg', 4, 2),
+      ].sort((a, b) => a.start - b.start);
+    },
+    status: (events) => eventsToData(events),
+  },
+
+  rss: {
+    state: () => {
+      const ago = (min) => new Date(Date.now() - min * 60000);
+      return [
+        ['Kabinet presenteert plannen voor goedkopere thuisbatterijen', 6, 'Binnenland'],
+        ['Storm verwacht: KNMI geeft code geel af voor kustprovincies', 18, 'Weer'],
+        ['Bitcoin stijgt opnieuw boven de 60.000 euro', 34, 'Economie'],
+        ['Oranje wint oefenduel na late treffer', 52, 'Sport'],
+        ['Nieuwe regels voor salderen zonnepanelen vanaf 2027', 75, 'Economie'],
+        ['Techbedrijven werken samen aan open standaard voor slimme lampen', 110, 'Tech'],
+        ['Treinverkeer rond Utrecht weer op gang na storing', 140, 'Binnenland'],
+      ].map(([title, min, category], i) => ({ id: `n${i}`, title, link: `https://www.nu.nl/#demo-${i}`, published: ago(min), category, image: null }));
+    },
+    status: (articles) => articlesToData(articles),
   },
 };
 

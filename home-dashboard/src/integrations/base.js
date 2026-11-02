@@ -6,7 +6,8 @@
  *   summary?: { label, value, unit, trend? },          // grote kop-waarde
  *   metrics?: [{ label, value, unit, icon?, trend? }],  // kleine kerncijfers
  *   flow?:    { pv, load, grid, gridDirection, storage?, chargeLevel?, unit } // energiestroom
- *   items?:   [{ id, name, icon?, online?, metrics?: [...], controls?: [...] }]
+ *   items?:   [{ id, name, icon?, online?, subtitle?, href?, image?, color?, group?,
+ *               metrics?: [...], controls?: [...] }]
  * }
  *
  * Een control is één van:
