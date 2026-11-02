@@ -1,0 +1,47 @@
+{
+  "title": "Thuis",
+  "refreshSeconds": 5,
+
+  "integrations": [
+    {
+      "id": "zon",
+      "type": "solaredge",
+      "name": "Zonnepanelen",
+      "demo": true,
+      "siteId": "${SOLAREDGE_SITE_ID}",
+      "apiKey": "${SOLAREDGE_API_KEY}",
+      "openUrl": "https://monitoring.solaredge.com"
+    },
+    {
+      "id": "plugwise",
+      "type": "plugwise",
+      "name": "Plugwise",
+      "demo": true,
+      "host": "192.168.1.50",
+      "password": "${PLUGWISE_PASSWORD}"
+    },
+    {
+      "id": "lampen",
+      "type": "lsc",
+      "name": "LSC verlichting",
+      "demo": true,
+      "region": "eu",
+      "accessId": "${TUYA_ACCESS_ID}",
+      "accessSecret": "${TUYA_ACCESS_SECRET}"
+    },
+    {
+      "id": "crypto",
+      "type": "http-json",
+      "name": "Crypto",
+      "icon": "coins",
+      "demo": true,
+      "url": "http://192.168.1.60:3000/api/dashboard",
+      "controlUrl": "http://192.168.1.60:3000/api/dashboard/control",
+      "openUrl": "http://192.168.1.60:3000"
+    }
+  ],
+
+  "apps": [
+    { "name": "Crypto-app", "url": "http://192.168.1.60:3000", "icon": "coins" }
+  ]
+}
